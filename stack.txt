@@ -1,0 +1,11 @@
+Layer	Technology/Crate	Notes
+Frontend (UI)	React	SPA, React Router, WebSocket API for real-time
+Frontend → Backend	WebSocket (preferred), REST fallback	Use REST for login/signup, WebSocket for chat, presence, etc.
+Backend Framework	Rocket (rocket, rocket_ws)	Rocket v0.5+, async support via Tokio
+WebSockets	rocket_ws or tokio-tungstenite	rocket_ws simplifies tokio-tungstenite use
+Async Runtime	Tokio	Rocket is already built on Tokio
+Database	SQLx + PostgreSQL	Fully async, compile-time query checks
+Auth	argon2 or bcrypt + JWT (or cookies)	Start with JWT or private cookies for simplicity
+File Storage	Local FS initially, S3-compatible later	Store metadata (filename, type, user) in DB
+Security	rocket_cors, rocket_sessions, rate-limiters	CSP, XSS protection, token verification
+Testing	rocket::local::asynchronous::Client, tokio-tungstenite	Integration + WebSocket tests
