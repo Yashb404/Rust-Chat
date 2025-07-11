@@ -31,3 +31,5 @@ tokio-stream = "0.1"
 
 # Future utilities
 futures-util = "0.3"
+
+chrono = { version = "0.4", features = ["serde"] }
