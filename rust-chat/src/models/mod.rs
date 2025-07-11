@@ -12,3 +12,12 @@ pub struct User {
     pub username: String,
     pub connected_at: chrono::DateTime<chrono::Utc>,
 }
+
+use chrono::{DateTime, Utc};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Room {
+    pub id: RoomId,
+    pub name: String,
+    pub created_at: DateTime<Utc>,
+}

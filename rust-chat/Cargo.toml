@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 # Web framework
 rocket = { version = "0.5.1", features = ["json", "tls"] }
+rocket_ws = "0.1.1"
 
 # Async runtime
 tokio = { version = "1.38", features = ["full"] }
