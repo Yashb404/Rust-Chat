@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 pub type UserId = Uuid;
-pub type RoomId = Uuid;
+pub type RoomId = String;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
