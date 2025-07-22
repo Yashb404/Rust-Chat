@@ -1,27 +1,48 @@
+// src/main.rs
+
+// --- New Imports ---
+use dotenvy::dotenv;
+use sqlx::{postgres::PgPoolOptions, PgPool};
+// --- End New Imports ---
+use crate::handlers::auth;
+use crate::state::ChatServerState;
+use log::info;
+use rocket::{routes, Build, Rocket};
+
 mod models;
 mod websocket;
 mod handlers;
 mod state;
 
-use crate::state::ChatServerState;
-use log::info;
-use rocket::{routes, Build, Rocket};
-
 #[tokio::main]
 async fn main() -> Result<(), rocket::Error> {
+    // --- New: Load .env file ---
+    dotenv().ok();
+    // --- End New ---
+
     env_logger::init();
     info!("Starting chat server...");
 
+    // --- New: Create Database Pool ---
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await
+        .expect("Failed to create database connection pool.");
+    // --- End New ---
+
     let chat_state = ChatServerState::new();
 
+    // --- Changed: Updated Rocket build chain ---
     let _rocket = rocket::build()
-        .manage(chat_state)
-        .mount("/ws", routes![websocket::handler::ws_handler]) // We'll add routes soon
-        .ignite()
-        .await?
-        .launch()
+        .manage(pool) // Add the database pool to Rocket's state
+        .manage(chat_state) // Keep your existing chat state
+        .mount("/ws", routes![websocket::handler::ws_handler])
+        .mount("/auth", routes![auth::register])
+        .launch() // The .ignite() and .launch() calls are combined here
         .await?;
-    
+    // --- End Changed ---
 
     Ok(())
 }

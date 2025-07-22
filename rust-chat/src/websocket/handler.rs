@@ -48,7 +48,7 @@ fn register_user(username: String, room: &str, state: &ChatServerState) -> (User
         .or_insert_with(DashSet::new)
         .insert(user_id);
 
-    println!("✅ {} joined room '{}'", username, room);
+    println!("{} joined room '{}'", username, room);
     (user_id, user)
 }
 
@@ -62,7 +62,7 @@ fn cleanup_user(user_id: UserId, username: &str, room: &str, state: &ChatServerS
         }
     }
     state.connections.remove(&user_id);
-    println!("❌ {} left room '{}'", username, room);
+    println!("{} left room '{}'", username, room);
 }
 
 #[get("/chat/<room>?<username>")]
