@@ -1,6 +1,8 @@
 // src/handlers/auth.rs
-
-// --- New and Updated Imports ---
+use rocket::http::Status;
+use rocket::response::Responder;
+use rocket::Request;
+use rocket::response::Response;
 use argon2::{
     password_hash::{
         rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString
@@ -22,15 +24,42 @@ pub struct AuthResponse {
     token: String,
 }
 
-// We've added a specific error for password hash parsing/verification
+#[derive(Serialize)]
+struct ErrorResponse {
+    error: String,
+}
+
+// added a specific error for password hash parsing/verification
 #[derive(Debug, thiserror::Error)]
 pub enum AuthError {
     #[error("Username already exists")]
     UsernameExists,
     #[error("Invalid credentials")]
     InvalidCredentials,
-    #[error("Internal server error")]
+    #[error("Server error")]
     ServerError,
+}
+
+#[rocket::async_trait]
+//added responder implementation for AuthError
+impl<'r> Responder<'r, 'static> for AuthError {
+    fn respond_to(self, req: &'r Request<'_>) -> rocket::response::Result<'static> {
+        let error_message = self.to_string();
+        let status = match self {
+            AuthError::UsernameExists => Status::Conflict,
+            AuthError::InvalidCredentials => Status::Unauthorized,
+            AuthError::ServerError => Status::InternalServerError,
+        };
+        
+        let json = Json(ErrorResponse {
+            error: error_message,
+        });
+        
+        Response::build()
+            .status(status)
+            .merge(json.respond_to(req)?)
+            .ok()
+    }
 }
 
 // This allows us to convert different error types into our custom error response
@@ -42,7 +71,10 @@ impl From<argon2::password_hash::Error> for AuthError {
 }
 
 
-// --- Refactored Registration Endpoint ---
+//register endpoint for user registration
+// This endpoint hashes the password and stores the user in the database.
+// If the username already exists, it returns a conflict error.
+// If the registration is successful, it returns a placeholder JWT token.
 #[post("/register", format = "json", data = "<payload>")]
 pub async fn register(
     pool: &State<PgPool>,
