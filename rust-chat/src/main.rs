@@ -6,6 +6,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 // --- End New Imports ---
 use crate::handlers::auth;
 use crate::state::ChatServerState;
+
 use log::info;
 use rocket::{routes, Build, Rocket};
 
