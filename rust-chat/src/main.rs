@@ -6,6 +6,7 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 // --- End New Imports ---
 use crate::handlers::auth;
 use crate::state::ChatServerState;
+use crate::handlers::chat;
 
 use log::info;
 use rocket::{routes, Build, Rocket};
@@ -43,6 +44,7 @@ async fn main() -> Result<(), rocket::Error> {
         .manage(chat_state) // Keep your existing chat state
         .mount("/ws", routes![websocket::handler::ws_handler])
         .mount("/auth", routes![auth::register,auth::login])
+        .mount("/api", routes![chat::get_history])
         .launch() // The .ignite() and .launch() calls are combined here
         .await?;
     
