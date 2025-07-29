@@ -29,6 +29,14 @@ impl ChatCommand{
         state: &ChatServerState,
         pool: &PgPool,
     ){
-        //TODO: add logic to handle the command
+        match cmd {
+            ChatCommand:: JoinRoom{room_id, username }=>{
+                //joining a room
+            }
+            ChatCommand::SendMessage { room_id, content }=> {
+                //sending a message
+            }
+
+        }
     }
 }
