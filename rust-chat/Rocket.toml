@@ -1,0 +1,6 @@
+# Rocket.toml
+
+# We define a custom `app` table to hold our application-specific configuration.
+[default.app]
+database_url = "postgres://chat_user:your_secure_password_here@localhost:5432/chat_db"
+jwt_secret = "a-very-long-and-super-secret-string-that-no-one-can-guess-123!@"

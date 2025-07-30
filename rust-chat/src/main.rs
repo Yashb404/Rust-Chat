@@ -1,53 +1,76 @@
 // src/main.rs
 
-
-use dotenvy::dotenv;
+use rocket::{routes, Build, Rocket, fs::FileServer};
 use sqlx::{postgres::PgPoolOptions, PgPool};
-// --- End New Imports ---
-use crate::handlers::auth;
-use crate::state::ChatServerState;
-use crate::handlers::chat;
-
 use log::info;
-use rocket::{routes, Build, Rocket};
 
+// Import the new config and the state
+use crate::config::AppConfig;
+use crate::state::ChatServerState;
+
+// Import all handlers
+use crate::handlers::{auth, chat};
+
+
+// Declare all modules
 mod models;
-mod websocket;
-mod handlers;
 mod state;
+mod config;
+mod handlers;
+mod websocket;
 
-#[tokio::main]
+#[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-  
-    dotenv().ok();
-    
-
     env_logger::init();
     info!("Starting chat server...");
 
-  
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env file");
-    println!("Attempting to connect with URL: {}", db_url);
-    // Create a connection pool for PostgreSQL
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&db_url)
-        .await
-        .expect("Failed to create database connection pool.");
-   
+    rocket::build()
+        // A "fairing" is a piece of middleware that hooks into Rocket's launch
+        // process. `on_ignite` runs after Rocket has loaded its configuration
+        // but before it starts accepting requests.
+        .attach(rocket::fairing::AdHoc::on_ignite("Application Setup", |rocket| async {
+            // 1. Extract the custom `AppConfig` from Rocket's configuration.
+            //    Figment has already loaded `Rocket.toml` and any `ROCKET_APP_` env vars.
+            let app_config = match rocket.figment().extract::<AppConfig>() {
+                Ok(config) => config,
+                Err(e) => {
+                    rocket::error!("Failed to extract AppConfig: {}", e);
+                    return rocket;
+                }
+            };
 
-    let chat_state = ChatServerState::new();
+            // 2. Set up the database pool using the URL from our loaded config.
+            let pool = match PgPoolOptions::new()
+                .max_connections(5)
+                .connect(&app_config.database_url)
+                .await
+            {
+                Ok(pool) => pool,
+                Err(e) => {
+                    rocket::error!("Failed to connect to the database: {}", e);
+                    return rocket;
+                }
+            };
 
-    // --- Changed: Updated Rocket build chain ---
-    let _rocket = rocket::build()
-        .manage(pool) // Add the database pool to Rocket's state
-        .manage(chat_state) // Keep your existing chat state
+            // 3. Put the database pool, app configuration, and chat state into
+            //    Rocket's managed state so handlers can access them.
+            rocket.manage(pool).manage(app_config).manage(ChatServerState::new())
+        }))
+        // The route mounting remains the same.
         .mount("/ws", routes![websocket::handler::ws_handler])
-        .mount("/auth", routes![auth::register,auth::login])
-        .mount("/api", routes![chat::get_history, chat::list_rooms])
-        .launch() // The .ignite() and .launch() calls are combined here
+        .mount("/auth", routes![auth::register, auth::login])
+        .mount(
+            "/api",
+            routes![
+                chat::get_history,
+                chat::list_rooms,
+                chat::create_room,
+                chat::get_room_members
+            ],
+        )
+        .mount("/", FileServer::from("public"))
+        .launch()
         .await?;
-    
 
     Ok(())
 }
