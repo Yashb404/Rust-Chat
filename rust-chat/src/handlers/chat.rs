@@ -18,6 +18,32 @@ pub struct MessageRecord {
 }
 
 #[derive(Responder)]
+#[response(status = 500, content_type = "json")]
+pub struct RoomError(String);
+
+#[get("/rooms")]
+pub async fn list_rooms(
+    _user: AuthenticatedUser,
+    pool: &State<PgPool>,
+
+)-> Result<Json<Vec<RoomRecord>>, RoomError>{
+    let rooms = sqlx::query_as!(
+        RoomRecord,
+        "SELECT id, name FROM rooms ORDER BY name"
+    ).fetch_all(pool.inner())
+        .await
+        .map_err(|e| RoomError(e.to_string()))?;
+    Ok(Json(rooms))
+    }
+
+
+#[derive(Serialize, sqlx::FromRow)]
+pub struct RoomRecord{
+    id: Uuid,
+    name:String,
+}
+
+#[derive(Responder)]
 pub enum HistoryError{
     #[response(status = 500)]
     InternalError(String),

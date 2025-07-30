@@ -44,7 +44,7 @@ async fn main() -> Result<(), rocket::Error> {
         .manage(chat_state) // Keep your existing chat state
         .mount("/ws", routes![websocket::handler::ws_handler])
         .mount("/auth", routes![auth::register,auth::login])
-        .mount("/api", routes![chat::get_history])
+        .mount("/api", routes![chat::get_history, chat::list_rooms])
         .launch() // The .ignite() and .launch() calls are combined here
         .await?;
     
