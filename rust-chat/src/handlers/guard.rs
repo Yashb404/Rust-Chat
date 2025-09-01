@@ -5,10 +5,9 @@ use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request, Outcome};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-// Import the config struct
+
 use crate::config::AppConfig;
 
-// ... (AuthenticatedUser, Claims, GuardError structs/enums remain the same) ...
 
 pub struct AuthenticatedUser {
     pub user_id: Uuid,
@@ -55,7 +54,7 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
 
         let token_data = match decode::<Claims>(
             token,
-            &DecodingKey::from_secret(config.jwt_secret.as_ref()), // Use the secret from the config
+            &DecodingKey::from_secret(config.jwt_secret.as_ref()), 
             &Validation::default(),
         ) {
             Ok(data) => data,
